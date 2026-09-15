@@ -304,6 +304,46 @@ document.addEventListener("DOMContentLoaded", () => {
     return details.schedule;
   }
 
+  function buildShareContent(activityName, details) {
+    const scheduleText = formatSchedule(details);
+    const pageUrl = `${window.location.origin}${window.location.pathname}?activity=${encodeURIComponent(
+      activityName
+    )}`;
+    const shareText = `Check out ${activityName} at Mergington High School! Schedule: ${scheduleText}`;
+
+    return {
+      url: pageUrl,
+      text: shareText,
+    };
+  }
+
+  function handleSocialShare(platform, activityName, details) {
+    const { url, text } = buildShareContent(activityName, details);
+    let shareUrl = "";
+
+    if (platform === "x") {
+      shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+        text
+      )}&url=${encodeURIComponent(url)}`;
+    } else if (platform === "facebook") {
+      shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+        url
+      )}`;
+    } else if (platform === "whatsapp") {
+      shareUrl = `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`;
+    }
+
+    if (!shareUrl) {
+      showMessage("Unable to share this activity.", "error");
+      return;
+    }
+
+    const shareWindow = window.open(shareUrl, "_blank", "noopener,noreferrer");
+    if (!shareWindow) {
+      showMessage("Pop-up blocked. Please allow pop-ups to share.", "error");
+    }
+  }
+
   // Function to determine activity type (this would ideally come from backend)
   function getActivityType(activityName, description) {
     const name = activityName.toLowerCase();
@@ -553,6 +593,18 @@ document.addEventListener("DOMContentLoaded", () => {
         </ul>
       </div>
       <div class="activity-card-actions">
+        <div class="share-actions">
+          <span class="share-label">Share:</span>
+          <button class="share-button share-x" data-platform="x" aria-label="Share on X">
+            X
+          </button>
+          <button class="share-button share-facebook" data-platform="facebook" aria-label="Share on Facebook">
+            f
+          </button>
+          <button class="share-button share-whatsapp" data-platform="whatsapp" aria-label="Share on WhatsApp">
+            W
+          </button>
+        </div>
         ${
           currentUser
             ? `
@@ -586,6 +638,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    const shareButtons = activityCard.querySelectorAll(".share-button");
+    shareButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        handleSocialShare(button.dataset.platform, name, details);
+      });
+    });
 
     activitiesList.appendChild(activityCard);
   }
